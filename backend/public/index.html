@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Milkman — Admin Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100;0,9..144,200;1,9..144,100;1,9..144,200&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:         #0D0C0A;
+      --ink-2:       #131210;
+      --ink-3:       #1A1815;
+      --ink-4:       #222019;
+      --ink-5:       #2A2822;
+      --line:        rgba(255,255,255,0.06);
+      --line-med:    rgba(255,255,255,0.12);
+      --cream:       #F5EDD8;
+      --cream-dim:   #C8BA9E;
+      --cream-faint: #7A7060;
+      --amber:       #D4933A;
+      --amber-glow:  rgba(212,147,58,0.15);
+      --green:       #4CAF7D;
+      --green-glow:  rgba(76,175,125,0.12);
+      --red:         #E05252;
+      --red-glow:    rgba(224,82,82,0.12);
+      --blue:        #5B9BD5;
+      --blue-glow:   rgba(91,155,213,0.12);
+      --sidebar-w:   260px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--ink);
+      color: var(--cream);
+      font-family: "DM Sans", system-ui, sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--ink-5); border-radius: 2px; }
+
+    /* ─── TYPOGRAPHY ────────────────────────────────────── */
+    .serif { font-family: "Fraunces", Georgia, serif; font-weight: 100; letter-spacing: -0.02em; }
+    .serif-200 { font-family: "Fraunces", Georgia, serif; font-weight: 200; letter-spacing: -0.02em; }
+    .label { font-size: 0.62rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--cream-faint); }
+    .dim { color: var(--cream-dim); }
+    .faint { color: var(--cream-faint); }
+
+    /* ─── LOGIN SCREEN ─────────────────────────────────── */
+    #login-screen {
+      position: fixed; inset: 0; z-index: 1000;
+      background: var(--ink);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-box {
+      width: 100%; max-width: 420px;
+      padding: 3rem;
+      background: var(--ink-2);
+      border: 1px solid var(--line-med);
+      border-radius: 2px;
+    }
+    .login-wordmark {
+      font-family: "Fraunces", serif;
+      font-weight: 100;
+      font-size: 2.4rem;
+      color: var(--cream);
+      letter-spacing: -0.04em;
+      margin-bottom: 0.4rem;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .login-subtitle { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--cream-faint); margin-bottom: 2.8rem; }
+    .field-label { font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--cream-faint); margin-bottom: 0.5rem; display: block; }
+    .field-group { margin-bottom: 1.25rem; }
+    .field-input {
+      width: 100%; padding: 0.85rem 1rem;
+      background: var(--ink-3); border: 1px solid var(--line-med);
+      border-radius: 2px; color: var(--cream);
+      font-family: "DM Sans", sans-serif; font-size: 0.88rem; font-weight: 300;
+      outline: none; transition: border-color 0.2s;
+    }
+    .field-input:focus { border-color: var(--amber); }
+    .field-input::placeholder { color: var(--cream-faint); }
+    .btn-login {
+      width: 100%; padding: 0.9rem;
+      background: var(--amber); color: var(--ink);
+      font-family: "DM Sans", sans-serif; font-size: 0.78rem; font-weight: 500;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      border: none; border-radius: 2px; cursor: pointer;
+      transition: opacity 0.2s; margin-top: 0.5rem;
+    }
+    .btn-login:hover { opacity: 0.88; }
+    .login-hint {
+      margin-top: 2rem; padding: 1rem;
+      background: var(--ink-3); border: 1px solid var(--line);
+      border-radius: 2px; border-left: 2px solid var(--amber);
+    }
+    .login-hint p { font-size: 0.72rem; color: var(--cream-dim); line-height: 1.7; }
+    .login-hint span { color: var(--amber); font-weight: 400; }
+    .login-error {
+      margin-bottom: 1rem; padding: 0.8rem 1rem;
+      background: var(--red-glow); border: 1px solid rgba(224,82,82,0.3);
+      border-radius: 2px; font-size: 0.78rem; color: var(--red);
+      display: none;
+    }
+
+    /* ─── LAYOUT ───────────────────────────────────────── */
+    #app { display: none; min-height: 100vh; }
+
+    /* ─── SIDEBAR ──────────────────────────────────────── */
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: var(--sidebar-w);
+      background: var(--ink-2);
+      border-right: 1px solid var(--line);
+      display: flex; flex-direction: column;
+      z-index: 50;
+      overflow-y: auto;
+    }
+    .sidebar-head {
+      padding: 1.75rem 1.5rem 1.5rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .sidebar-wordmark {
+      font-family: "Fraunces", serif; font-weight: 100;
+      font-size: 1.6rem; color: var(--cream);
+      letter-spacing: -0.03em;
+      display: flex; align-items: center; gap: 0.5rem;
+      margin-bottom: 0.3rem;
+    }
+    .sidebar-tag { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--amber); }
+    .sidebar-clock { font-size: 0.72rem; color: var(--cream-faint); margin-top: 0.6rem; font-variant-numeric: tabular-nums; }
+
+    .sidebar-nav { flex: 1; padding: 1rem 0; }
+    .nav-section-label { padding: 1rem 1.5rem 0.4rem; font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--cream-faint); }
+    .nav-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.7rem 1.5rem;
+      cursor: pointer; transition: background 0.15s, color 0.15s;
+      border: none; background: none; width: 100%; text-align: left;
+      color: var(--cream-dim); font-family: "DM Sans", sans-serif;
+      font-size: 0.82rem; font-weight: 300; letter-spacing: 0.01em;
+      border-left: 2px solid transparent;
+    }
+    .nav-item:hover { background: var(--ink-3); color: var(--cream); }
+    .nav-item.active { background: var(--ink-3); color: var(--cream); border-left-color: var(--amber); }
+    .nav-item .nav-icon { width: 16px; height: 16px; opacity: 0.6; flex-shrink: 0; }
+    .nav-item.active .nav-icon { opacity: 1; }
+    .nav-badge {
+      margin-left: auto; background: var(--amber); color: var(--ink);
+      font-size: 0.6rem; font-weight: 500; padding: 0.15rem 0.45rem;
+      border-radius: 20px; min-width: 18px; text-align: center;
+    }
+
+    .sidebar-foot {
+      padding: 1.25rem 1.5rem;
+      border-top: 1px solid var(--line);
+    }
+    .admin-chip {
+      display: flex; align-items: center; gap: 0.65rem;
+      margin-bottom: 1rem;
+    }
+    .admin-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--amber); display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 500; color: var(--ink);
+      flex-shrink: 0;
+    }
+    .admin-name { font-size: 0.78rem; color: var(--cream); line-height: 1.2; }
+    .admin-role { font-size: 0.62rem; color: var(--amber); letter-spacing: 0.08em; text-transform: uppercase; }
+    .btn-logout {
+      width: 100%; padding: 0.6rem;
+      background: var(--ink-4); border: 1px solid var(--line-med);
+      color: var(--cream-dim); font-family: "DM Sans", sans-serif;
+      font-size: 0.72rem; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase;
+      cursor: pointer; border-radius: 2px; transition: all 0.2s;
+    }
+    .btn-logout:hover { background: var(--red-glow); border-color: rgba(224,82,82,0.3); color: var(--red); }
+
+    /* ─── MAIN CONTENT ─────────────────────────────────── */
+    .main {
+      margin-left: var(--sidebar-w);
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      background: rgba(13,12,10,0.92); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--line);
+      padding: 0 2rem;
+      height: 60px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-title { font-family: "Fraunces", serif; font-weight: 100; font-size: 1.15rem; color: var(--cream); letter-spacing: -0.02em; }
+    .topbar-right { display: flex; align-items: center; gap: 1rem; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-text { font-size: 0.68rem; color: var(--cream-faint); letter-spacing: 0.06em; }
+
+    .content { flex: 1; padding: 2.5rem 2rem; }
+
+    /* ─── PANELS ───────────────────────────────────────── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ─── STAT CARDS ───────────────────────────────────── */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; margin-bottom: 2rem; }
+    .stat-card { background: var(--ink-2); padding: 1.75rem; }
+    .stat-label { font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--cream-faint); margin-bottom: 0.75rem; }
+    .stat-value { font-family: "Fraunces", serif; font-weight: 100; font-size: 2.8rem; color: var(--cream); letter-spacing: -0.04em; line-height: 1; margin-bottom: 0.4rem; }
+    .stat-sub { font-size: 0.7rem; color: var(--cream-faint); }
+    .stat-up { color: var(--green); }
+    .stat-down { color: var(--red); }
+
+    /* ─── SECTION HEADER ───────────────────────────────── */
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+    .section-title { font-family: "Fraunces", serif; font-weight: 100; font-size: 1.5rem; color: var(--cream); letter-spacing: -0.02em; }
+    .section-desc { font-size: 0.75rem; color: var(--cream-faint); margin-top: 0.2rem; }
+
+    /* ─── ACTION BUTTONS ───────────────────────────────── */
+    .btn {
+      padding: 0.6rem 1.25rem; border-radius: 2px; cursor: pointer;
+      font-family: "DM Sans", sans-serif; font-size: 0.72rem; font-weight: 400;
+      letter-spacing: 0.1em; text-transform: uppercase; border: none; transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+    }
+    .btn-primary { background: var(--amber); color: var(--ink); }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-ghost { background: var(--ink-4); border: 1px solid var(--line-med); color: var(--cream-dim); }
+    .btn-ghost:hover { background: var(--ink-5); color: var(--cream); border-color: var(--line-med); }
+    .btn-danger { background: var(--red-glow); border: 1px solid rgba(224,82,82,0.25); color: var(--red); }
+    .btn-danger:hover { background: rgba(224,82,82,0.2); }
+    .btn-success { background: var(--green-glow); border: 1px solid rgba(76,175,125,0.25); color: var(--green); }
+    .btn-success:hover { background: rgba(76,175,125,0.2); }
+    .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.65rem; }
+
+    /* ─── SEARCH BAR ───────────────────────────────────── */
+    .search-wrap { position: relative; }
+    .search-input {
+      padding: 0.6rem 1rem 0.6rem 2.5rem; width: 260px;
+      background: var(--ink-3); border: 1px solid var(--line-med);
+      border-radius: 2px; color: var(--cream);
+      font-family: "DM Sans", sans-serif; font-size: 0.82rem; font-weight: 300;
+      outline: none; transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: var(--amber); }
+    .search-input::placeholder { color: var(--cream-faint); }
+    .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); opacity: 0.35; pointer-events: none; }
+
+    /* ─── TABLE ────────────────────────────────────────── */
+    .table-wrap { background: var(--ink-2); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: var(--ink-3); border-bottom: 1px solid var(--line-med); }
+    th { padding: 0.8rem 1rem; text-align: left; font-size: 0.6rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--cream-faint); white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid var(--line); transition: background 0.12s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--ink-3); }
+    td { padding: 0.9rem 1rem; font-size: 0.8rem; color: var(--cream-dim); vertical-align: middle; }
+    td .name { color: var(--cream); font-weight: 400; }
+    .td-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+    /* ─── BADGES ───────────────────────────────────────── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.2rem 0.65rem; border-radius: 20px;
+      font-size: 0.62rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .badge::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .badge-green { background: var(--green-glow); color: var(--green); border: 1px solid rgba(76,175,125,0.2); }
+    .badge-amber { background: var(--amber-glow); color: var(--amber); border: 1px solid rgba(212,147,58,0.2); }
+    .badge-red   { background: var(--red-glow);   color: var(--red);   border: 1px solid rgba(224,82,82,0.2); }
+    .badge-blue  { background: var(--blue-glow);  color: var(--blue);  border: 1px solid rgba(91,155,213,0.2); }
+
+    /* ─── PRODUCT CARDS ────────────────────────────────── */
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+    .product-card { background: var(--ink-2); padding: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .product-img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 2px; border: 1px solid var(--line); background: var(--ink-3); }
+    .product-name { font-family: "Fraunces", serif; font-weight: 100; font-size: 1.2rem; color: var(--cream); letter-spacing: -0.02em; }
+    .product-price { font-size: 0.85rem; color: var(--amber); font-weight: 400; }
+    .product-desc { font-size: 0.75rem; color: var(--cream-faint); line-height: 1.6; }
+    .product-actions { display: flex; gap: 0.5rem; margin-top: auto; }
+
+    /* ─── ACTIVITY FEED ────────────────────────────────── */
+    .activity-feed { background: var(--ink-2); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+    .activity-item { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--line); }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 0.35rem; flex-shrink: 0; }
+    .activity-text { font-size: 0.78rem; color: var(--cream-dim); line-height: 1.5; }
+    .activity-text strong { color: var(--cream); font-weight: 400; }
+    .activity-time { font-size: 0.65rem; color: var(--cream-faint); margin-top: 0.2rem; }
+
+    /* ─── MINI STATS ROW ───────────────────────────────── */
+    .mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; margin-bottom: 1.5rem; }
+    .mini-stat { background: var(--ink-2); padding: 1.25rem 1.5rem; }
+    .mini-stat-val { font-family: "Fraunces", serif; font-weight: 100; font-size: 2rem; color: var(--cream); letter-spacing: -0.03em; }
+    .mini-stat-label { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--cream-faint); margin-top: 0.3rem; }
+
+    /* ─── CHARTS (pure CSS) ────────────────────────────── */
+    .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 100px; padding: 0 0 0.5rem; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .bar { width: 100%; background: var(--amber); border-radius: 2px 2px 0 0; opacity: 0.75; transition: opacity 0.2s; min-height: 4px; }
+    .bar:hover { opacity: 1; }
+    .bar-lbl { font-size: 0.55rem; color: var(--cream-faint); letter-spacing: 0.05em; }
+    .chart-section { background: var(--ink-2); border: 1px solid var(--line); border-radius: 2px; padding: 1.5rem; }
+    .chart-title { font-size: 0.65rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--cream-faint); margin-bottom: 1.25rem; }
+
+    /* ─── MODAL ────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal-box {
+      width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+      background: var(--ink-2); border: 1px solid var(--line-med);
+      border-radius: 2px; padding: 2rem;
+    }
+    .modal-title { font-family: "Fraunces", serif; font-weight: 100; font-size: 1.5rem; color: var(--cream); letter-spacing: -0.02em; margin-bottom: 0.4rem; }
+    .modal-sub { font-size: 0.72rem; color: var(--cream-faint); margin-bottom: 2rem; }
+    .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.75rem; }
+    .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--cream-faint); cursor: pointer; font-size: 1.2rem; }
+
+    /* ─── TOAST ────────────────────────────────────────── */
+    #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.6rem; pointer-events: none; }
+    .toast {
+      padding: 0.85rem 1.25rem; border-radius: 2px;
+      background: var(--ink-3); border: 1px solid var(--line-med);
+      border-left: 3px solid var(--amber);
+      font-family: "DM Sans", sans-serif; font-size: 0.78rem; color: var(--cream-dim);
+      opacity: 0; transform: translateY(8px);
+      transition: all 0.3s; max-width: 300px;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); pointer-events: all; }
+    .toast.toast-success { border-left-color: var(--green); }
+    .toast.toast-error { border-left-color: var(--red); }
+    .toast-icon { font-size: 0.85rem; }
+
+    /* ─── TWO-COLUMN LAYOUT ────────────────────────────── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    .box { background: var(--ink-2); border: 1px solid var(--line); border-radius: 2px; padding: 1.5rem; }
+    .box-title { font-size: 0.65rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--cream-faint); margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--line); }
+
+    /* ─── KPI ROW ──────────────────────────────────────── */
+    .kpi-row { display: flex; flex-direction: column; gap: 0.6rem; }
+    .kpi-item { display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0; border-bottom: 1px solid var(--line); }
+    .kpi-item:last-child { border-bottom: none; }
+    .kpi-key { font-size: 0.75rem; color: var(--cream-faint); }
+    .kpi-val { font-size: 0.82rem; color: var(--cream); font-weight: 400; }
+    .kpi-val.amber { color: var(--amber); }
+    .kpi-val.green { color: var(--green); }
+
+    /* ─── SETTINGS ─────────────────────────────────────── */
+    .settings-section { background: var(--ink-2); border: 1px solid var(--line); border-radius: 2px; margin-bottom: 1.5rem; overflow: hidden; }
+    .settings-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+    .settings-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .settings-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    /* ─── EMPTY STATE ──────────────────────────────────── */
+    .empty-state { padding: 4rem; text-align: center; }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.3; }
+    .empty-text { font-size: 0.82rem; color: var(--cream-faint); }
+
+    /* ─── RESPONSIVE ───────────────────────────────────── */
+    @media (max-width: 900px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .two-col { grid-template-columns: 1fr; }
+      .settings-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .products-grid { grid-template-columns: 1fr; }
+      .search-input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div style="width:100%;max-width:420px;padding:2rem;">
+    <div class="login-box">
+      <div class="login-wordmark">
+        <svg width="22" height="26" viewBox="0 0 24 28" fill="none">
+          <path d="M12 2C12 2 4 10 4 17a8 8 0 0016 0C20 10 12 2 12 2z" fill="#F5EDD8" fill-opacity="0.9"/>
+          <path d="M9 18a3 3 0 006 0" stroke="#0D0C0A" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Milkman
+      </div>
+      <p class="login-subtitle">Admin Console · Restricted Access</p>
+
+      <div class="login-error" id="login-error">⚠ Invalid credentials. Access denied.</div>
+
+      <div class="field-group">
+        <label class="field-label">Email Address</label>
+        <input type="email" id="login-email" class="field-input" placeholder="admin@milkman.in" autocomplete="email" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Password</label>
+        <input type="password" id="login-pass" class="field-input" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <button class="btn-login" onclick="handleLogin()">Sign In to Console</button>
+
+      <div class="login-hint">
+        <p>Demo credentials<br/>
+          Email: <span>admin@milkman.in</span><br/>
+          Password: <span>admin123</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN APP
+══════════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-wordmark">
+        <svg width="18" height="22" viewBox="0 0 24 28" fill="none">
+          <path d="M12 2C12 2 4 10 4 17a8 8 0 0016 0C20 10 12 2 12 2z" fill="#F5EDD8" fill-opacity="0.9"/>
+          <path d="M9 18a3 3 0 006 0" stroke="#0D0C0A" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Milkman
+      </div>
+      <div class="sidebar-tag">Admin Console</div>
+      <div class="sidebar-clock" id="clock">—</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <button class="nav-item active" onclick="showPanel('dashboard', this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="1" y="1" width="5.5" height="5.5" rx="1"/><rect x="9.5" y="1" width="5.5" height="5.5" rx="1"/>
+          <rect x="1" y="9.5" width="5.5" height="5.5" rx="1"/><rect x="9.5" y="9.5" width="5.5" height="5.5" rx="1"/>
+        </svg>
+        Dashboard
+      </button>
+
+      <div class="nav-section-label">Management</div>
+      <button class="nav-item" onclick="showPanel('customers', this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="8" cy="5" r="3"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5"/>
+        </svg>
+        Customers
+        <span class="nav-badge" id="cust-badge">—</span>
+      </button>
+      <button class="nav-item" onclick="showPanel('subscriptions', this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="3" width="12" height="11" rx="1"/><path d="M5 1v4M11 1v4M2 7h12"/>
+        </svg>
+        Subscriptions
+        <span class="nav-badge" id="sub-badge">—</span>
+      </button>
+      <button class="nav-item" onclick="showPanel('products', this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M2 4l6-2 6 2v8l-6 2-6-2V4z"/><path d="M8 2v12M2 4l6 2 6-2"/>
+        </svg>
+        Products
+      </button>
+      <button class="nav-item" onclick="showPanel('orders', this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 3h10l-1.5 7H4.5L3 3z"/><circle cx="6" cy="13" r="1"/><circle cx="11" cy="13" r="1"/>
+        </svg>
+        Orders
+      </button>
+
+      <div class="nav-section-label">System</div>
+      <button class="nav-item" onclick="showPanel('settings', this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="8" cy="8" r="2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/>
+        </svg>
+        Settings
+      </button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="admin-chip">
+        <div class="admin-avatar" id="admin-initials">A</div>
+        <div>
+          <div class="admin-name" id="admin-display-name">Administrator</div>
+          <div class="admin-role">Super Admin</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="handleLogout()">Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-right">
+        <div class="status-dot"></div>
+        <span class="status-text">System Online</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══════════════════════════════════════════════════
+           DASHBOARD PANEL
+      ══════════════════════════════════════════════════════ -->
+      <div class="panel active" id="panel-dashboard">
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Customers</div>
+            <div class="stat-value" id="stat-customers">—</div>
+            <div class="stat-sub"><span class="stat-up" id="stat-customers-sub">Loading…</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Active Subscriptions</div>
+            <div class="stat-value" id="stat-subs">—</div>
+            <div class="stat-sub"><span class="stat-up" id="stat-subs-sub">Loading…</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Monthly Revenue</div>
+            <div class="stat-value" id="stat-revenue">—</div>
+            <div class="stat-sub"><span class="stat-up">Estimated</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Products Listed</div>
+            <div class="stat-value" id="stat-products">—</div>
+            <div class="stat-sub"><span class="stat-up" id="stat-products-sub">Loading…</span></div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <div class="chart-section">
+              <div class="chart-title">Weekly Orders (Last 7 Days)</div>
+              <div class="bar-chart" id="bar-chart"></div>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Platform KPIs</div>
+            <div class="kpi-row">
+              <div class="kpi-item"><span class="kpi-key">Delivery Success Rate</span><span class="kpi-val green">98.7%</span></div>
+              <div class="kpi-item"><span class="kpi-key">Avg. Subscription Value</span><span class="kpi-val amber" id="kpi-avg-sub">—</span></div>
+              <div class="kpi-item"><span class="kpi-key">Churn Rate (30d)</span><span class="kpi-val">2.1%</span></div>
+              <div class="kpi-item"><span class="kpi-key">New Customers (30d)</span><span class="kpi-val" id="kpi-new-cust">—</span></div>
+              <div class="kpi-item"><span class="kpi-key">Delivery Zones Active</span><span class="kpi-val">12</span></div>
+              <div class="kpi-item"><span class="kpi-key">Last Data Refresh</span><span class="kpi-val" id="kpi-refresh">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <div style="margin-bottom:0.75rem;display:flex;align-items:center;justify-content:space-between;">
+              <span class="label">Recent Customers</span>
+              <button class="btn btn-ghost btn-sm" onclick="showPanel('customers', document.querySelector('[onclick*=\"customers\"]'))">View All</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Name</th><th>Plan</th><th>Status</th></tr></thead>
+                <tbody id="dash-recent-customers">
+                  <tr><td colspan="3" class="faint" style="padding:2rem;text-align:center;font-size:0.75rem;">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div style="margin-bottom:0.75rem;"><span class="label">Recent Activity</span></div>
+            <div class="activity-feed" id="activity-feed">
+              <div class="activity-item">
+                <div class="activity-dot" style="background:var(--amber)"></div>
+                <div>
+                  <div class="activity-text"><strong>System loaded</strong> — Admin console initialised</div>
+                  <div class="activity-time">Just now</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /panel-dashboard -->
+
+
+      <!-- ══════════════════════════════════════════════════
+           CUSTOMERS PANEL
+      ══════════════════════════════════════════════════════ -->
+      <div class="panel" id="panel-customers">
+        <div class="section-head">
+          <div>
+            <div class="section-title">Customers</div>
+            <div class="section-desc">Manage customer accounts, subscriptions, and admin privileges</div>
+          </div>
+          <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+            <div class="search-wrap">
+              <svg class="search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#7A7060" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3"/></svg>
+              <input class="search-input" id="cust-search" placeholder="Search name or email…" oninput="filterCustomers()" />
+            </div>
+            <button class="btn btn-primary" onclick="openModal('modal-add-customer')">+ Add Customer</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th><th>Email</th><th>Phone</th>
+                <th>Plan</th><th>Subscribed</th><th>Admin</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="customers-tbody">
+              <tr><td colspan="7" class="faint" style="padding:3rem;text-align:center;">Loading customers…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- /panel-customers -->
+
+
+      <!-- ══════════════════════════════════════════════════
+           SUBSCRIPTIONS PANEL
+      ══════════════════════════════════════════════════════ -->
+      <div class="panel" id="panel-subscriptions">
+        <div class="section-head">
+          <div>
+            <div class="section-title">Subscriptions</div>
+            <div class="section-desc">Track and manage all active dairy delivery subscriptions</div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-add-sub')">+ Add Subscription</button>
+        </div>
+
+        <div class="mini-stats" id="sub-mini-stats">
+          <div class="mini-stat"><div class="mini-stat-val" id="ms-active">—</div><div class="mini-stat-label">Active</div></div>
+          <div class="mini-stat"><div class="mini-stat-val" id="ms-expiring">—</div><div class="mini-stat-label">Expiring in 7 Days</div></div>
+          <div class="mini-stat"><div class="mini-stat-val" id="ms-expired">—</div><div class="mini-stat-label">Expired</div></div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Sub ID</th><th>Customer</th><th>Start Date</th><th>End Date</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="subs-tbody">
+              <tr><td colspan="6" class="faint" style="padding:3rem;text-align:center;">Loading subscriptions…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- /panel-subscriptions -->
+
+
+      <!-- ══════════════════════════════════════════════════
+           PRODUCTS PANEL
+      ══════════════════════════════════════════════════════ -->
+      <div class="panel" id="panel-products">
+        <div class="section-head">
+          <div>
+            <div class="section-title">Products</div>
+            <div class="section-desc">Manage dairy product listings and availability</div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-add-product')">+ Add Product</button>
+        </div>
+        <div class="products-grid" id="products-grid">
+          <div style="padding:3rem;text-align:center;" class="faint">Loading products…</div>
+        </div>
+      </div><!-- /panel-products -->
+
+
+      <!-- ══════════════════════════════════════════════════
+           ORDERS PANEL
+      ══════════════════════════════════════════════════════ -->
+      <div class="panel" id="panel-orders">
+        <div class="section-head">
+          <div>
+            <div class="section-title">Orders & Activity</div>
+            <div class="section-desc">Chronological feed of all customer orders and deliveries</div>
+          </div>
+          <button class="btn btn-ghost" onclick="loadOrders()">↻ Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Amount</th><th>Payment</th><th>Date</th><th>Status</th></tr></thead>
+            <tbody id="orders-tbody">
+              <tr><td colspan="7" class="faint" style="padding:3rem;text-align:center;">Loading orders…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- /panel-orders -->
+
+
+      <!-- ══════════════════════════════════════════════════
+           SETTINGS PANEL
+      ══════════════════════════════════════════════════════ -->
+      <div class="panel" id="panel-settings">
+        <div class="section-head">
+          <div>
+            <div class="section-title">Settings</div>
+            <div class="section-desc">System configuration and admin management</div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-header">
+            <div>
+              <div style="font-size:0.82rem;color:var(--cream);font-weight:400;">API Configuration</div>
+              <div style="font-size:0.7rem;color:var(--cream-faint);margin-top:0.2rem;">Django REST Framework backend settings</div>
+            </div>
+            <span class="badge badge-green">Connected</span>
+          </div>
+          <div class="settings-body">
+            <div class="settings-row">
+              <div class="field-group" style="margin:0;">
+                <label class="field-label">Django API Base URL</label>
+                <input class="field-input" value="http://127.0.0.1:8000/api" readonly />
+              </div>
+              <div class="field-group" style="margin:0;">
+                <label class="field-label">Admin Panel Port</label>
+                <input class="field-input" value="5000" readonly />
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="field-group" style="margin:0;">
+                <label class="field-label">Session Timeout</label>
+                <input class="field-input" value="8 hours" readonly />
+              </div>
+              <div class="field-group" style="margin:0;">
+                <label class="field-label">Database</label>
+                <input class="field-input" value="SQLite (milkman.db)" readonly />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-header">
+            <div>
+              <div style="font-size:0.82rem;color:var(--cream);font-weight:400;">Grant Admin Privileges</div>
+              <div style="font-size:0.7rem;color:var(--cream-faint);margin-top:0.2rem;">Promote a customer account to admin</div>
+            </div>
+          </div>
+          <div class="settings-body">
+            <div class="settings-row">
+              <div class="field-group" style="margin:0;">
+                <label class="field-label">Customer Email</label>
+                <input class="field-input" id="grant-email" placeholder="customer@email.com" />
+              </div>
+              <div style="display:flex;align-items:flex-end;">
+                <button class="btn btn-primary" onclick="grantAdmin()">Grant Admin</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-header">
+            <div>
+              <div style="font-size:0.82rem;color:var(--cream);font-weight:400;">Change Admin Password</div>
+              <div style="font-size:0.7rem;color:var(--cream-faint);margin-top:0.2rem;">Update the console login credentials</div>
+            </div>
+          </div>
+          <div class="settings-body">
+            <div class="settings-row">
+              <div class="field-group" style="margin:0;">
+                <label class="field-label">New Password</label>
+                <input type="password" class="field-input" id="new-pass" placeholder="••••••••" />
+              </div>
+              <div class="field-group" style="margin:0;">
+                <label class="field-label">Confirm Password</label>
+                <input type="password" class="field-input" id="confirm-pass" placeholder="••••••••" />
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-header">
+            <div>
+              <div style="font-size:0.82rem;color:var(--cream);font-weight:400;">Danger Zone</div>
+              <div style="font-size:0.7rem;color:var(--red);margin-top:0.2rem;">Irreversible actions — proceed with caution</div>
+            </div>
+          </div>
+          <div class="settings-body">
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+              <button class="btn btn-danger" onclick="toast('⚠ Feature disabled in demo mode.','error')">Clear All Sessions</button>
+              <button class="btn btn-danger" onclick="toast('⚠ Feature disabled in demo mode.','error')">Export Database</button>
+              <button class="btn btn-danger" onclick="toast('⚠ Feature disabled in demo mode.','error')">Purge Test Data</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /panel-settings -->
+
+    </div><!-- /content -->
+  </main>
+
+</div><!-- /app -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════════════════════ -->
+
+<!-- Add Customer -->
+<div class="modal-overlay" id="modal-add-customer">
+  <div class="modal-box">
+    <div class="modal-title">Add Customer</div>
+    <div class="modal-sub">Create a new customer account in the system</div>
+    <div class="field-group"><label class="field-label">Full Name</label><input class="field-input" id="m-cust-name" placeholder="e.g. Priya Sharma" /></div>
+    <div class="field-group"><label class="field-label">Email Address</label><input class="field-input" id="m-cust-email" type="email" placeholder="priya@email.com" /></div>
+    <div class="field-group"><label class="field-label">Phone Number</label><input class="field-input" id="m-cust-phone" placeholder="+91 98765 43210" /></div>
+    <div class="field-group">
+      <label class="field-label">Subscription Plan</label>
+      <select class="field-input" id="m-cust-plan">
+        <option value="none">No Plan</option>
+        <option value="basic">Basic — ₹599/mo</option>
+        <option value="family">Family — ₹999/mo</option>
+        <option value="premium">Premium — ₹1,499/mo</option>
+      </select>
+    </div>
+    <div class="field-group"><label class="field-label">Temporary Password</label><input class="field-input" id="m-cust-pass" type="password" placeholder="Min. 8 characters" /></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-customer')">Cancel</button>
+      <button class="btn btn-primary" onclick="addCustomer()">Create Customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Customer -->
+<div class="modal-overlay" id="modal-edit-customer">
+  <div class="modal-box">
+    <div class="modal-title">Edit Customer</div>
+    <div class="modal-sub">Update customer account details</div>
+    <input type="hidden" id="edit-cust-id" />
+    <div class="field-group"><label class="field-label">Full Name</label><input class="field-input" id="edit-cust-name" /></div>
+    <div class="field-group"><label class="field-label">Email Address</label><input class="field-input" id="edit-cust-email" type="email" /></div>
+    <div class="field-group"><label class="field-label">Phone Number</label><input class="field-input" id="edit-cust-phone" /></div>
+    <div class="field-group">
+      <label class="field-label">Subscription Plan</label>
+      <select class="field-input" id="edit-cust-plan">
+        <option value="none">No Plan</option>
+        <option value="basic">Basic — ₹599/mo</option>
+        <option value="family">Family — ₹999/mo</option>
+        <option value="premium">Premium — ₹1,499/mo</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-edit-customer')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCustomer()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Subscription -->
+<div class="modal-overlay" id="modal-add-sub">
+  <div class="modal-box">
+    <div class="modal-title">Add Subscription</div>
+    <div class="modal-sub">Manually create a 30-day dairy delivery subscription</div>
+    <div class="field-group"><label class="field-label">Customer Email</label><input class="field-input" id="m-sub-email" placeholder="customer@email.com" /></div>
+    <div class="field-group">
+      <label class="field-label">Plan</label>
+      <select class="field-input" id="m-sub-plan">
+        <option value="basic">Basic — ₹599/mo</option>
+        <option value="family">Family — ₹999/mo</option>
+        <option value="premium">Premium — ₹1,499/mo</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Start Date</label>
+      <input class="field-input" id="m-sub-start" type="date" />
+    </div>
+    <div style="padding:0.85rem 1rem;background:var(--ink-3);border:1px solid var(--line);border-radius:2px;font-size:0.75rem;color:var(--cream-faint);margin-bottom:1.25rem;">
+      ℹ End date is automatically set to <strong style="color:var(--cream);">+30 days</strong> from the start date.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-sub')">Cancel</button>
+      <button class="btn btn-primary" onclick="addSubscription()">Create Subscription</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Product -->
+<div class="modal-overlay" id="modal-add-product">
+  <div class="modal-box">
+    <div class="modal-title">Add Product</div>
+    <div class="modal-sub">List a new dairy product in the storefront</div>
+    <div class="field-group"><label class="field-label">Product Name</label><input class="field-input" id="m-prod-name" placeholder="e.g. A2 Gir Cow Milk" /></div>
+    <div class="field-group"><label class="field-label">Price (₹)</label><input class="field-input" id="m-prod-price" type="number" placeholder="e.g. 89" /></div>
+    <div class="field-group"><label class="field-label">Description</label><textarea class="field-input" id="m-prod-desc" rows="3" style="resize:vertical;" placeholder="Brief product description…"></textarea></div>
+    <div class="field-group"><label class="field-label">Image URL</label><input class="field-input" id="m-prod-img" placeholder="https://…" /></div>
+    <div class="field-group">
+      <label class="field-label">Category</label>
+      <select class="field-input" id="m-prod-cat">
+        <option value="milk">Milk</option>
+        <option value="butter">Butter &amp; Ghee</option>
+        <option value="curd">Curd &amp; Yogurt</option>
+        <option value="cheese">Cheese</option>
+        <option value="cream">Cream</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-product')">Cancel</button>
+      <button class="btn btn-primary" onclick="addProduct()">Add Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════════════ -->
+<script>
+// ── STATE ────────────────────────────────────────────────────
+const STATE = {
+  admin: null,
+  customers: [],
+  subscriptions: [],
+  products: [],
+  orders: [],
+  currentPanel: 'dashboard',
+  adminPass: 'admin123',
+};
+
+// ── LOG DATA FOR DEBUGGING ───────────────────────────────────
+function logState() {
+  console.log("Current Admin State:", STATE);
+}
+
+// ── CLOCK ────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleString('en-IN', {
+    weekday:'short', day:'numeric', month:'short',
+    hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true
+  });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── LOGIN ────────────────────────────────────────────────────
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass   = document.getElementById('login-pass').value;
+  const err    = document.getElementById('login-error');
+  const btn    = document.querySelector('.btn-login');
+
+  if (!email || !pass) return;
+  
+  btn.disabled = true;
+  btn.textContent = 'Authenticating...';
+
+  try {
+    const res = await fetch('/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      err.style.display = 'none';
+      STATE.admin = data.admin;
+      document.getElementById('admin-display-name').textContent = STATE.admin.name;
+      document.getElementById('admin-initials').textContent = STATE.admin.name.charAt(0);
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      await loadDashboard();
+      addActivity('Admin signed in', 'var(--green)');
+      toast(`Welcome back, ${STATE.admin.name}`, 'success');
+    } else {
+      const data = await res.json();
+      toast(data.error || 'Authentication failed', 'error');
+      err.style.display = 'block';
+    }
+  } catch (e) {
+    toast('Server connection error', 'error');
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign In to Console';
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') {
+    handleLogin();
+  }
+});
+
+// Set today's date as default for subscription start
+document.getElementById('m-sub-start').valueAsDate = new Date();
+
+// ── LOGOUT ───────────────────────────────────────────────────
+function handleLogout() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-pass').value = '';
+  toast('Signed out successfully');
+}
+
+// ── PANEL NAVIGATION ─────────────────────────────────────────
+const PANEL_TITLES = {
+  dashboard: 'Dashboard', customers: 'Customers',
+  subscriptions: 'Subscriptions', products: 'Products',
+  orders: 'Orders & Activity', settings: 'Settings',
+};
+
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  document.getElementById('topbar-title').textContent = PANEL_TITLES[name] || name;
+  STATE.currentPanel = name;
+  if (name === 'dashboard')     loadDashboard();
+  if (name === 'customers')     renderCustomers();
+  if (name === 'subscriptions') renderSubscriptions();
+  if (name === 'products')      renderProducts();
+  if (name === 'orders')        loadOrders();
+}
+
+// ── LOAD DASHBOARD ───────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    // Fetch real customers
+    const custRes = await fetch('/admin/customers');
+    if (custRes.ok) {
+      STATE.customers = await custRes.json();
+    } else {
+      if (custRes.status === 401) {
+        toast('Session expired. Please sign in again.', 'error');
+        handleLogout();
+        return;
+      }
+      throw new Error('Failed to fetch customers');
+    }
+
+    // Fetch real subscriptions
+    const subRes = await fetch('/admin/subscriptions');
+    if (subRes.ok) STATE.subscriptions = await subRes.json();
+
+    // Fetch real products
+    const prodRes = await fetch('/admin/products');
+    if (prodRes.ok) STATE.products = await prodRes.json();
+
+    // Mock orders as they are not implemented in API yet
+    STATE.orders = [];
+  } catch (e) {
+    console.error("Failed to load dashboard data:", e);
+    toast('Error connecting to API. Check if Django is running.', 'error');
+  }
+
+  const activeSubs = STATE.subscriptions.filter(s => {
+    // Check real API field 'is_active'
+    if (s.is_active !== undefined) return s.is_active;
+    // Fallback to date check if needed
+    const now  = new Date();
+    const end  = new Date(s.end_date || s.end);
+    return end >= now;
+  }).length;
+
+  document.getElementById('stat-customers').textContent   = STATE.customers.length;
+  document.getElementById('stat-subs').textContent        = activeSubs;
+  document.getElementById('stat-revenue').textContent     = '₹' + (activeSubs * 1000).toLocaleString('en-IN');
+  document.getElementById('stat-products').textContent    = STATE.products.length;
+  document.getElementById('stat-customers-sub').textContent = 'Live data';
+  document.getElementById('stat-subs-sub').textContent   = 'of ' + STATE.subscriptions.length + ' total';
+  document.getElementById('stat-products-sub').textContent = STATE.products.filter(p=>p.available).length + ' available';
+  document.getElementById('cust-badge').textContent       = STATE.customers.length;
+  document.getElementById('sub-badge').textContent        = activeSubs;
+  document.getElementById('kpi-avg-sub').textContent      = '₹1,000';
+  document.getElementById('kpi-new-cust').textContent     = STATE.customers.length;
+  document.getElementById('kpi-refresh').textContent      = new Date().toLocaleTimeString('en-IN');
+
+  // Bar chart (Empty for now as no order data)
+  document.getElementById('bar-chart').innerHTML = '<div style="font-size:0.7rem;color:var(--cream-faint);padding:2rem;">No order data</div>';
+
+  // Recent customers table
+  const tbody = document.getElementById('dash-recent-customers');
+  tbody.innerHTML = STATE.customers.length === 0 
+    ? '<tr><td colspan="3" class="faint">No customers yet</td></tr>'
+    : STATE.customers.slice(0,5).map(c => {
+        let plan = 'none';
+        if (c.plan) plan = c.plan;
+        else if (c.payment_info && c.payment_info.plan) plan = c.payment_info.plan;
+        
+        return `
+        <tr>
+          <td><span class="name">${c.name}</span></td>
+          <td><span class="badge ${planBadge(plan)}">${plan}</span></td>
+          <td>${c.is_subscribed ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-red">Inactive</span>'}</td>
+        </tr>
+      `;}).join('');
+}
+
+function renderCustomers(list) {
+  const data = list || STATE.customers;
+  document.getElementById('customers-tbody').innerHTML = data.length === 0
+    ? `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No customers found</div></div></td></tr>`
+    : data.map(c => {
+      // Handle plan from customer data or payment_info
+      let plan = 'none';
+      if (c.plan) plan = c.plan;
+      else if (c.payment_info && c.payment_info.plan) plan = c.payment_info.plan;
+      
+      // Real API uses created_at
+      const joinedDate = c.created_at ? new Date(c.created_at).toLocaleDateString('en-IN') : (c.joined || '—');
+      
+      return `
+      <tr>
+        <td><span class="name">${c.name}</span><div style="font-size:0.65rem;color:var(--cream-faint);margin-top:0.2rem;">Joined ${joinedDate}</div></td>
+        <td>${c.email}</td>
+        <td>${c.phone || '—'}</td>
+        <td><span class="badge ${planBadge(plan)}">${plan}</span></td>
+        <td>${c.is_subscribed ? '<span class="badge badge-green">Yes</span>' : '<span class="badge badge-red">No</span>'}</td>
+        <td>${c.is_staff ? '<span class="badge badge-amber">Admin</span>' : '<span class="badge" style="background:var(--ink-4);color:var(--cream-faint);border:1px solid var(--line);">User</span>'}</td>
+        <td>
+          <div class="td-actions">
+            <button class="btn btn-ghost btn-sm" onclick="editCustomer(${c.id})">Edit</button>
+            <button class="btn btn-success btn-sm" onclick="grantAdminById(${c.id})">+ Admin</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteCustomer(${c.id})">Delete</button>
+          </div>
+        </td>
+      </tr>
+    `;}).join('');
+}
+
+function filterCustomers() {
+  const q = document.getElementById('cust-search').value.toLowerCase();
+  renderCustomers(STATE.customers.filter(c =>
+    c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q)
+  ));
+}
+
+function editCustomer(id) {
+  const c = STATE.customers.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('edit-cust-id').value    = id;
+  document.getElementById('edit-cust-name').value  = c.name;
+  document.getElementById('edit-cust-email').value = c.email;
+  document.getElementById('edit-cust-phone').value = c.phone;
+  document.getElementById('edit-cust-plan').value  = c.plan;
+  openModal('modal-edit-customer');
+}
+
+async function saveCustomer() {
+  const id   = document.getElementById('edit-cust-id').value;
+  const payload = {
+    name:  document.getElementById('edit-cust-name').value,
+    email: document.getElementById('edit-cust-email').value,
+    phone: document.getElementById('edit-cust-phone').value,
+    plan:  document.getElementById('edit-cust-plan').value,
+  };
+  
+  try {
+    const res = await fetch(`/admin/customers/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      closeModal('modal-edit-customer');
+      await loadDashboard();
+      renderCustomers();
+      addActivity(`Updated customer <strong>${payload.name}</strong>`, 'var(--amber)');
+      toast(`Customer ${payload.name} updated`, 'success');
+    } else {
+      const data = await res.json();
+      toast(data.error || 'Update failed', 'error');
+    }
+  } catch (e) {
+    toast('Server error', 'error');
+  }
+}
+
+async function deleteCustomer(id) {
+  const c = STATE.customers.find(x => x.id === id);
+  if (!c || !confirm(`Delete ${c.name}? This cannot be undone.`)) return;
+  
+  try {
+    const res = await fetch(`/admin/customers/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      await loadDashboard();
+      renderCustomers();
+      addActivity(`Deleted customer <strong>${c.name}</strong>`, 'var(--red)');
+      toast(`Customer ${c.name} deleted`, 'error');
+    } else {
+      toast('Failed to delete customer', 'error');
+    }
+  } catch (e) {
+    toast('Server error', 'error');
+  }
+}
+
+async function addCustomer() {
+  const name  = document.getElementById('m-cust-name').value.trim();
+  const email = document.getElementById('m-cust-email').value.trim();
+  const phone = document.getElementById('m-cust-phone').value.trim();
+  const pass  = document.getElementById('m-cust-pass').value;
+  const plan  = document.getElementById('m-cust-plan').value;
+  if (!name || !email || !pass) { toast('Name, email, and password are required', 'error'); return; }
+  
+  try {
+    const res = await fetch('/admin/customers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, password: pass, plan })
+    });
+    if (res.ok) {
+      closeModal('modal-add-customer');
+      await loadDashboard();
+      renderCustomers();
+      addActivity(`Added new customer <strong>${name}</strong>`, 'var(--green)');
+      toast(`${name} added successfully`, 'success');
+      ['m-cust-name','m-cust-email','m-cust-phone','m-cust-pass'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('m-cust-plan').value = 'none';
+    } else {
+      const data = await res.json();
+      toast(data.error || 'Failed to add customer', 'error');
+    }
+  } catch (e) {
+    toast('Server error', 'error');
+  }
+}
+
+async function grantAdminById(id) {
+  const c = STATE.customers.find(x => x.id === id);
+  if (!c) return;
+  if (c.is_staff) { toast(`${c.name} is already an admin`); return; }
+  
+  try {
+    const res = await fetch(`/admin/customers/${id}/grant-admin`, { method: 'POST' });
+    if (res.ok) {
+      await loadDashboard();
+      renderCustomers();
+      addActivity(`Granted admin to <strong>${c.name}</strong>`, 'var(--amber)');
+      toast(`Admin privileges granted to ${c.name}`, 'success');
+    } else {
+      toast('Failed to grant admin', 'error');
+    }
+  } catch (e) {
+    toast('Server error', 'error');
+  }
+}
+
+// ── RENDER SUBSCRIPTIONS ──────────────────────────────────────
+function subStatus(s) {
+  // Use API field if available
+  if (s.is_active !== undefined) return s.is_active ? 'Active' : 'Expired';
+  
+  const now  = new Date();
+  const end  = new Date(s.end_date || s.end);
+  const diff = Math.ceil((end - now) / 86400000);
+  if (diff < 0)  return 'Expired';
+  if (diff <= 7) return 'Expiring';
+  return 'Active';
+}
+
+function renderSubscriptions() {
+  const active   = STATE.subscriptions.filter(s => subStatus(s) === 'Active').length;
+  const expiring = STATE.subscriptions.filter(s => subStatus(s) === 'Expiring').length;
+  const expired  = STATE.subscriptions.filter(s => subStatus(s) === 'Expired').length;
+  document.getElementById('ms-active').textContent   = active;
+  document.getElementById('ms-expiring').textContent = expiring;
+  document.getElementById('ms-expired').textContent  = expired;
+  document.getElementById('sub-badge').textContent   = active;
+
+  document.getElementById('subs-tbody').innerHTML = STATE.subscriptions.length === 0
+    ? '<tr><td colspan="6" class="faint">No subscriptions yet</td></tr>'
+    : STATE.subscriptions.map(s => {
+        const st = subStatus(s);
+        const bc = st === 'Active' ? 'badge-green' : st === 'Expiring' ? 'badge-amber' : 'badge-red';
+        const subId = s.subscription_id || s.id;
+        const custName = s.customer_name || s.customer;
+        const custEmail = s.customer_email || s.email;
+        const startDate = s.start_date || s.start;
+        const endDate = s.end_date || s.end;
+        
+        return `
+          <tr>
+            <td><span style="font-family:'DM Sans';font-size:0.72rem;color:var(--amber);font-weight:400;">${subId}</span></td>
+            <td><span class="name">${custName}</span><div style="font-size:0.65rem;color:var(--cream-faint);">${custEmail}</div></td>
+            <td>${startDate}</td>
+            <td>${endDate}</td>
+            <td><span class="badge ${bc}">${st}</span></td>
+            <td>
+              <div class="td-actions">
+                <button class="btn btn-success btn-sm" onclick="renewSub('${subId}')">Renew</button>
+                <button class="btn btn-danger btn-sm" onclick="cancelSub('${subId}')">Cancel</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+}
+
+async function renewSub(id) {
+  const s = STATE.subscriptions.find(x => x.subscription_id === id || x.id === id);
+  if (!s) return;
+  const currentEnd = new Date(s.end_date || s.end);
+  const newEnd = new Date(currentEnd);
+  newEnd.setDate(newEnd.getDate() + 30);
+  const endStr = newEnd.toISOString().split('T')[0];
+  
+  try {
+    const res = await fetch(`/admin/subscriptions/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ end_date: endStr })
+    });
+    if (res.ok) {
+      await loadDashboard();
+      renderSubscriptions();
+      addActivity(`Renewed subscription <strong>${id}</strong>`, 'var(--green)');
+      toast(`Subscription ${id} renewed by 30 days`, 'success');
+    } else {
+      toast('Failed to renew subscription', 'error');
+    }
+  } catch (e) {
+    toast('Server error', 'error');
+  }
+}
+
+async function cancelSub(id) {
+  if (!confirm(`Cancel subscription ${id}?`)) return;
+  
+  try {
+    const res = await fetch(`/admin/subscriptions/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      await loadDashboard();
+      renderSubscriptions();
+      addActivity(`Cancelled subscription <strong>${id}</strong>`, 'var(--red)');
+      toast(`Subscription ${id} cancelled`, 'error');
+    } else {
+      toast('Failed to cancel subscription', 'error');
+    }
+  } catch (e) {
+    toast('Server error', 'error');
+  }
+}
+
+async function addSubscription() {
+  const email = document.getElementById('m-sub-email').value.trim();
+  const start = document.getElementById('m-sub-start').value;
+  if (!email || !start) { toast('All fields are required', 'error'); return; }
+  
+  const cust = STATE.customers.find(c => c.email === email);
+  if (!cust) { toast('Customer not found with this email', 'error'); return; }
+
+  try {
+    const res = await fetch('/admin/subscriptions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customer_id: cust.id, start_date: start })
+    });
+    if (res.ok) {
+      closeModal('modal-add-sub');
+      await loadDashboard();
+      renderSubscriptions();
+      addActivity(`Created subscription for <strong>${cust.name}</strong>`, 'var(--green)');
+      toast(`Subscription created for ${cust.name}`, 'success');
+      document.getElementById('m-sub-email').value = '';
+      document.getElementById('m-sub-start').valueAsDate = new Date();
+    } else {
+      const data = await res.json();
+      toast(data.error || 'Failed to create subscription', 'error');
+    }
+  } catch (e) {
+    toast('Server error', 'error');
+  }
+}
+
+function renderProducts() {
+  document.getElementById('products-grid').innerHTML = STATE.products.length === 0
+    ? '<div style="padding:3rem;text-align:center;" class="faint">No products in catalogue</div>'
+    : STATE.products.map(p => `
+    <div class="product-card">
+      <img class="product-img" src="${p.image_url || p.image}" alt="${p.name}" loading="lazy"
+           onerror="this.style.background='var(--ink-4)';this.removeAttribute('src')" />
+      <div>
+        <div class="product-name">${p.name}</div>
+        <div class="product-price">₹${p.price}</div>
+      </div>
+      <div class="product-desc">${p.description}</div>
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-top:auto;">
+        ${p.available
+          ? '<span class="badge badge-green">Available</span>'
+          : '<span class="badge badge-red">Unavailable</span>'}
+        <span class="badge badge-blue">${p.category}</span>
+      </div>
+      <div class="product-actions">
+        <button class="btn btn-ghost btn-sm" onclick="toggleProduct(${p.id})" style="flex:1;">
+          ${p.available ? 'Disable' : 'Enable'}
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function toggleProduct(id) {
+  const p = STATE.products.find(x => x.id === id);
+  if (!p) return;
+  const newStatus = !p.available;
+  
+  try {
+    const res = await fetch(`/admin/products/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ available: newStatus })
+    });
+    if (res.ok) {
+      await loadDashboard();
+      renderProducts();
+      addActivity(`${newStatus ? 'Enabled' : 'Disabled'} product <strong>${p.name}</strong>`, 'var(--amber)');
+      toast(`${p.name} is now ${newStatus ? 'available' : 'unavailable'}`, newStatus ? 'success' : 'error');
+    } else {
+      toast('Failed to update product', 'error');
+    }
+  } catch (e) {
+    toast('Server error', 'error');
+  }
+}
+
+async function deleteProduct(id) {
+  const p = STATE.products.find(x => x.id === id);
+  if (!p || !confirm(`Delete "${p.name}"?`)) return;
+  
+  try {
+    const res = await fetch(`/admin/products/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      await loadDashboard();
+      renderProducts();
+      addActivity(`Deleted product <strong>${p.name}</strong>`, 'var(--red)');
+      toast(`${p.name} deleted`, 'error');
+    } else {
+      toast('Failed to delete product', 'error');
+    }
+  } catch (e) {
+    toast('Server error', 'error');
+  }
+}
+
+async function addProduct() {
+  const name  = document.getElementById('m-prod-name').value.trim();
+  const price = parseFloat(document.getElementById('m-prod-price').value);
+  const desc  = document.getElementById('m-prod-desc').value.trim();
+  const img   = document.getElementById('m-prod-img').value.trim();
+  const cat   = document.getElementById('m-prod-cat').value;
+  if (!name || !price) { toast('Name and price are required', 'error'); return; }
+  
+  const payload = { name, price, description: desc, image_url: img, category: cat, available: true };
+
+  try {
+    const res = await fetch('/admin/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      closeModal('modal-add-product');
+      await loadDashboard();
+      renderProducts();
+      addActivity(`Added product <strong>${name}</strong>`, 'var(--green)');
+      toast(`${name} added to catalogue`, 'success');
+      ['m-prod-name','m-prod-price','m-prod-desc','m-prod-img'].forEach(id => document.getElementById(id).value = '');
+    } else {
+      const data = await res.json();
+      toast(data.error || 'Failed to add product', 'error');
+    }
+  } catch (e) {
+    toast('Server error', 'error');
+  }
+}
+
+// ── ORDERS ────────────────────────────────────────────────────
+function loadOrders() {
+  document.getElementById('orders-tbody').innerHTML = STATE.orders.length === 0
+    ? '<tr><td colspan="7" class="faint">No orders yet</td></tr>'
+    : STATE.orders.map(o => `
+    <tr>
+      <td><span style="color:var(--amber);font-size:0.72rem;font-weight:400;">${o.id}</span></td>
+      <td><span class="name">${o.customer}</span></td>
+      <td style="color:var(--cream-faint);font-size:0.75rem;">${o.items}</td>
+      <td style="font-weight:400;color:var(--cream);">${o.amount}</td>
+      <td><span class="badge badge-blue">${o.payment}</span></td>
+      <td style="color:var(--cream-faint);font-size:0.75rem;">${o.date}</td>
+      <td><span class="badge badge-green">${o.status}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────
+async function grantAdmin() {
+  const email = document.getElementById('grant-email').value.trim();
+  if (!email) { toast('Enter an email address', 'error'); return; }
+  const c = STATE.customers.find(x => x.email === email);
+  if (!c) { toast('Customer not found', 'error'); return; }
+  if (c.is_staff) { toast(`${c.name} is already an admin`); return; }
+  
+  try {
+    const res = await fetch(`/admin/customers/${c.id}/grant-admin`, { method: 'POST' });
+    if (res.ok) {
+      document.getElementById('grant-email').value = '';
+      await loadDashboard();
+      addActivity(`Granted admin to <strong>${c.name}</strong>`, 'var(--amber)');
+      toast(`Admin granted to ${c.name}`, 'success');
+    } else {
+      toast('Failed to grant admin', 'error');
+    }
+  } catch (e) {
+    toast('Server error', 'error');
+  }
+}
+
+function changePassword() {
+  const np = document.getElementById('new-pass').value;
+  const cp = document.getElementById('confirm-pass').value;
+  if (!np || np.length < 8)    { toast('Password must be at least 8 characters', 'error'); return; }
+  if (np !== cp)               { toast('Passwords do not match', 'error'); return; }
+  STATE.adminPass = np;
+  document.getElementById('new-pass').value    = '';
+  document.getElementById('confirm-pass').value = '';
+  addActivity('Admin password updated', 'var(--amber)');
+  toast('Password updated successfully', 'success');
+}
+
+// ── PLAN BADGE HELPER ─────────────────────────────────────────
+function planBadge(plan) {
+  return { premium:'badge-amber', family:'badge-blue', basic:'badge-green' }[plan] || 'badge-red';
+}
+
+// ── ACTIVITY LOG ──────────────────────────────────────────────
+function addActivity(text, color = 'var(--cream-faint)') {
+  const feed = document.getElementById('activity-feed');
+  const time = new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  const item = document.createElement('div');
+  item.className = 'activity-item';
+  item.innerHTML = `
+    <div class="activity-dot" style="background:${color}"></div>
+    <div>
+      <div class="activity-text">${text}</div>
+      <div class="activity-time">${time}</div>
+    </div>
+  `;
+  feed.insertBefore(item, feed.firstChild);
+  if (feed.children.length > 20) feed.removeChild(feed.lastChild);
+}
+
+// ── MODAL ─────────────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+// ── TOAST ─────────────────────────────────────────────────────
+function toast(message, type = '') {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+  el.className = `toast ${type ? 'toast-' + type : ''}`;
+  el.innerHTML = `<span class="toast-icon">${icon}</span>${message}`;
+  container.appendChild(el);
+  requestAnimationFrame(() => { requestAnimationFrame(() => el.classList.add('show')); });
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 300);
+  }, 3500);
+}
+</script>
+</body>
+</html>
